@@ -51,8 +51,13 @@ vars.2020_acs5 <- load_variables(2020,"acs5") # prints all the names of the vars
 mhh.inc.var <- vars.2020_acs5[vars.2020_acs5$concept == "MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2020 INFLATION-ADJUSTED DOLLARS)",]$name
 
 acs.data <- get_acs(geography = "tract", variables = mhh.inc.var,
-                state = geoid_tract(geoid.add1)["state"], 
-                county = geoid_tract(geoid.add1)["county"], 
-                geometry = F, year = 2020) %>% .[.$GEOID == geoid.add1,]
+                    state = geoid_tract(geoid.add1)["state"], 
+                    county = geoid_tract(geoid.add1)["county"], 
+                    geometry = F, year = 2020) %>% .[.$GEOID == geoid.add1,]
 
 print(acs.data)
+
+# A tibble: 1 × 5
+# GEOID         NAME                                    variable      estimate   moe
+# <chr>         <chr>                                   <chr>         <dbl>     <dbl>
+# 1 17031061100 Census Tract 611, Cook County, Illinois B19013_001    103889    23529
