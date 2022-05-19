@@ -3,25 +3,14 @@
 rm(list=ls());cat('\f')
 
 # Libraries----
-
-load.libs <- c("dplyr", 
-               "censusxy",
-               "tidycensus",
-               "tigris", 
-               "readxl",
-               "readr", 
-               "rstudioapi")
-
+load.libs <- c("dplyr","censusxy","tidycensus","tigris","readxl","readr","rstudioapi")
 
 # check if libraries/packages are installed
 for(l in load.libs){
-  # Is package 'l' installed? 
+  # Is package 'l' installed? If not, ask user for permission to install package
   my.pkgs <- packageStatus()$inst$Package # gets a list of all installed packages
   if(!l %in% my.pkgs){
-    # If not, ask user for permission to install package
     cat('\n')
-    
-    
     # if run outside an interactive session, automatically install missing packages
     permit.install.pkg <- ifelse(interactive(), readline(prompt = paste("Authorize Script to install package [",l,"] (y/n)?", sep = "")), "y")
     # If authorized, install package
@@ -32,35 +21,29 @@ for(l in load.libs){
     cat('\n')
     print(paste(l,"already installed"))
   }
-  # load library
+  # now that library has been installed if missing, load library
   library(l, character.only = T)
   print(paste(l,"loaded"))
 }
 
 # set working directory----
-script.filename <- getActiveDocumentContext()$path %>%
+# get filename of script
+script.filename <- getActiveDocumentContext()$path %>%  
   strsplit(x = ., 
            split = "/") %>%
   unlist() %>%
   last()
-script.dir <- rstudioapi::getActiveDocumentContext()$path %>%
+# get directory where script is saved
+script.dir <- rstudioapi::getActiveDocumentContext()$path %>% 
   gsub(pattern = script.filename, 
        replacement = "", 
        x = .)
+# set working directory to where script is saved, so that as long as
+# spreadsheet is placed in same directory as script, script will find that file
+# and process it
 setwd(script.dir)
 
-# Load Functions----
-geoid_tract <- function(gt){
-  if(nchar(gt)!=11){
-    stop("geoid must be 11 chars long")
-  }
-  return(c(state = substr(gt,1,2), county = substr(gt,3,5), tract = substr(gt,6,11)))
-}
-
-
-
 # batch geocode from spreadsheet----
-
 if(file.exists("batch_addresses_in.xlsx")){
   batch.adds.input <- read_xlsx(path = "batch_addresses_in.xlsx")
   batch.adds.output <- cxy_geocode(batch.adds.input, 
@@ -81,23 +64,32 @@ if(file.exists("batch_addresses_in.xlsx")){
 
 
 
+#### SUPPLEMENTAL CODE BELOW - NOT NECESSARY ####
+
+# Load Custom Functions----
+geoid_tract <- function(gt){
+  if(nchar(gt)!=11){
+    stop("geoid must be 11 chars long")
+  }
+  return(c(state = substr(gt,1,2), county = substr(gt,3,5), tract = substr(gt,6,11)))
+}
+
 # geocode an un-processed address----
 an.add <- ifelse(interactive(), readline(prompt = "<Enter Address> "), "1060 W Addison St, Chicago, IL 60613")
-
-add1 <- as_tibble(cxy_oneline(address = an.add)) 
+add1   <- as_tibble(cxy_oneline(address = an.add)) 
 add1 %>% t
 
 # get geoid for tract----
-geoid.add1 <- tigris::append_geoid(address = data.frame(lat = add1$coordinates.y, 
-                                                        lon = add1$coordinates.x), 
-                                   geoid_type = "tract")$geoid
+geoid.add1     <- tigris::append_geoid(address = data.frame(lat = add1$coordinates.y, 
+                                                            lon = add1$coordinates.x), 
+                                       geoid_type = "tract")$geoid
 
 # get state, county, tract breakout from geoid----
-geoid.tract1 <- geoid_tract(gt = geoid.add1)
+geoid.tract1   <- geoid_tract(gt = geoid.add1)
 
 # find median hh income for that tract----
 vars.2020_acs5 <- load_variables(2020,"acs5") # prints all the names of the vars for the 5-year american community survey for 2020
-mhh.inc.var <- vars.2020_acs5[vars.2020_acs5$concept == "MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2020 INFLATION-ADJUSTED DOLLARS)",]$name
+mhh.inc.var    <- vars.2020_acs5[vars.2020_acs5$concept == "MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2020 INFLATION-ADJUSTED DOLLARS)",]$name
 
 acs.data <- get_acs(geography = "tract", variables = mhh.inc.var,
                     state = geoid_tract(geoid.add1)["state"], 
@@ -105,7 +97,6 @@ acs.data <- get_acs(geography = "tract", variables = mhh.inc.var,
                     geometry = F, year = 2020) %>% .[.$GEOID == geoid.add1,]
 
 print(acs.data)
-
 # A tibble: 1 × 5
 # GEOID         NAME                                    variable      estimate   moe
 # <chr>         <chr>                                   <chr>         <dbl>     <dbl>
