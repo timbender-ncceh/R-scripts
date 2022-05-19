@@ -1,17 +1,55 @@
-# Geocode Tool
-# https://cran.r-project.org/web/packages/censusxy/vignettes/censusxy.html
-
-# Load Necessary Libraries only----
-library(censusxy)
-library(tidycensus)
-library(tigris)
-
-#Sys.getenv("CENSUS_API_KEY") # check census api key
-options(tigris_use_cache = F)
+# Geocoding Tool
 
 rm(list=ls());cat('\f')
 
-# functions----
+# Libraries----
+
+load.libs <- c("dplyr", 
+               "censusxy",
+               "tidycensus",
+               "tigris", 
+               "readxl",
+               "readr", 
+               "rstudioapi")
+
+
+# check if libraries/packages are installed
+for(l in load.libs){
+  # Is package 'l' installed? 
+  my.pkgs <- packageStatus()$inst$Package # gets a list of all installed packages
+  if(!l %in% my.pkgs){
+    # If not, ask user for permission to install package
+    cat('\n')
+    
+    
+    # if run outside an interactive session, automatically install missing packages
+    permit.install.pkg <- ifelse(interactive(), readline(prompt = paste("Authorize Script to install package [",l,"] (y/n)?", sep = "")), "y")
+    # If authorized, install package
+    ifelse(test = tolower(permit.install.pkg) %in% c("y", "yes"), 
+           install.packages(l), 
+           print("User declined installation of required package; script will not execute properly until installation is permitted. If you receive this message in error contact Tim Bender"))
+  }else{
+    cat('\n')
+    print(paste(l,"already installed"))
+  }
+  # load library
+  library(l, character.only = T)
+  print(paste(l,"loaded"))
+}
+
+# set working directory----
+script.filename <- getActiveDocumentContext()$path %>%
+  strsplit(x = ., 
+           split = "/") %>%
+  unlist() %>%
+  last()
+script.dir <- rstudioapi::getActiveDocumentContext()$path %>%
+  gsub(pattern = script.filename, 
+       replacement = "", 
+       x = .)
+setwd(script.dir)
+
+# Load Functions----
 geoid_tract <- function(gt){
   if(nchar(gt)!=11){
     stop("geoid must be 11 chars long")
@@ -19,24 +57,35 @@ geoid_tract <- function(gt){
   return(c(state = substr(gt,1,2), county = substr(gt,3,5), tract = substr(gt,6,11)))
 }
 
-# batch geocode from neat spreadsheet----
-x <- stl_homicides[1:10,]
-x
 
-cxy_geocode(x, 
-            street = 'street_address', 
-            city = 'city', 
-            state = 'state', 
-            zip = 'postal_code',
-            return = 'locations', # 'locations' or 'geographies'
-            class = 'dataframe',  # 'dataframe' or 'sf' 
-            output = 'full')   # 'simple' or 'full' 
+
+# batch geocode from spreadsheet----
+
+if(file.exists("batch_addresses_in.xlsx")){
+  batch.adds.input <- read_xlsx(path = "batch_addresses_in.xlsx")
+  batch.adds.output <- cxy_geocode(batch.adds.input, 
+                                   street = 'street_address', 
+                                   city = 'city', 
+                                   state = 'state', 
+                                   zip = 'zipcode',
+                                   return = 'locations', # 'locations' or 'geographies'
+                                   class = 'dataframe',  # 'dataframe' or 'sf' 
+                                   output = 'full')   # 'simple' or 'full' 
+  
+  readr::write_csv(x = batch.adds.output, file = "batch_addresses_out.csv")
+  print("geocoding process complete")
+  print(paste("see file 'batch_addresses_out.csv' in", getwd()))
+}else{
+  print(paste("Skipping Batch Geocoding Process: No file named 'batch_addresses_in.xlsx' in ", getwd()))
+}
+
+
 
 # geocode an un-processed address----
-an.add <- "1060 W Addison St, Chicago, IL 60613"
+an.add <- ifelse(interactive(), readline(prompt = "<Enter Address> "), "1060 W Addison St, Chicago, IL 60613")
 
 add1 <- as_tibble(cxy_oneline(address = an.add)) 
-add1
+add1 %>% t
 
 # get geoid for tract----
 geoid.add1 <- tigris::append_geoid(address = data.frame(lat = add1$coordinates.y, 
