@@ -1,5 +1,5 @@
 library(dplyr)
-rm(list=ls());cat('\f')
+#rm(list=ls());cat('\f')
 
 # funs----
 format_pn <- function(txt, sep = "-", ndig = 10){
