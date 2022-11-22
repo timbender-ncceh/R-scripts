@@ -2,19 +2,19 @@ library(dplyr)
 #rm(list=ls());cat('\f')
 
 # funs----
-format_pn <- function(txt, sep = "-", ndig = 10){
+format_pn <- function(txt, output.sep = "-", output.ndig = 10){
   txt <- as.character(txt)
   # remove non-numeric chars
   out <- gsub("\\W|\\D", "", txt) 
   # check number of digits
-  if(nchar(out) != ndig){
+  if(nchar(out) != output.ndig){
     if(first(unlist(strsplit(out, "")))!= "1"){
       out <- NA
       #stop("check input; input doesn't match desired number of digits")
     }else{
       out <- unlist(strsplit(out, ""))
       out <- out[2:length(out)]
-      out <- paste(out, sep = "", collapse = "")
+      out <- paste(out, output.sep = "", collapse = "")
     }
   }
   # format 
@@ -22,7 +22,7 @@ format_pn <- function(txt, sep = "-", ndig = 10){
     out.a <- substr(out, 1, 3)
     out.b <- substr(out, 4, 6)
     out.c <- substr(out, 7,10)
-    out <- paste(out.a, out.b, out.c, sep = sep, collapse = sep)
+    out <- paste(out.a, out.b, out.c, sep = output.sep, collapse = output.sep)
   }
   # return
   return(out)
