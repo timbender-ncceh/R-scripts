@@ -1,36 +1,31 @@
 library(dplyr)
 #rm(list=ls());cat('\f')
 
+# import areacodes----
+areacodes <- read_csv("https://raw.githubusercontent.com/ravisorg/Area-Code-Geolocation-Database/master/us-area-code-cities.csv",
+                      col_names = F)
+areacodes <- unique(areacodes$X1)
+
 # funs----
-format_pn <- function(txt, output.sep = "-", output.ndig = 10){
-  txt <- as.character(txt)
-  # remove non-numeric chars
-  out <- gsub("\\W|\\D", "", txt) 
-  # check number of digits
-  if(nchar(out) != output.ndig){
-    if(first(unlist(strsplit(out, "")))!= "1"){
-      out <- NA
-      #stop("check input; input doesn't match desired number of digits")
-    }else{
-      out <- unlist(strsplit(out, ""))
-      out <- out[2:length(out)]
-      out <- paste(out, output.sep = "", collapse = "")
-    }
+format_pn <- function(txt){
+  # basic find-replace for non-word characters (i.e. '\\W') OR non-numeral characters ('\\D')
+  temp <- trimws(gsub("\\W|\\D", "", unlist(strsplit(x = txt, split = " ")))) %>%
+    grep(pattern = paste("^", areacodes, sep = "", collapse = "|"), x = ., 
+         value = T)
+  
+  # check that remaining phone number is 10 digits
+  temp <- temp[nchar(temp) == 10]
+  
+  # if input text (txt) fails all logic and var "temp" is now empty, assign NA to "temp"  
+  if(length(temp) == 0){
+    temp <- NA
   }
-  # format 
-  if(!is.na(out)){
-    out.a <- substr(out, 1, 3)
-    out.b <- substr(out, 4, 6)
-    out.c <- substr(out, 7,10)
-    out <- paste(out.a, out.b, out.c, sep = output.sep, collapse = output.sep)
-  }
-  # return
-  return(out)
+  return(temp)
 }
 
 # Examples:
-format_pn("555-5555") # [1] NA
-format_pn("555-555-1234") # [1] "555-555-1234
+format_pn("555-1234") # [1] NA
+format_pn("303-555-1234") # [1] "555-555-1234
 format_pn("1+555-555-1234")# [1] "555-555-1234
 format_pn("555-555-1234 (step sons cell phone)")# [1] "555-555-1234
 
