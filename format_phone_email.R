@@ -7,6 +7,20 @@ areacodes <- read_csv("https://raw.githubusercontent.com/ravisorg/Area-Code-Geol
 areacodes <- unique(areacodes$X1)
 
 # funs----
+# a simple formula for generating fake 10-digit phone numbers for testing purposes
+gen_pn <- function(fivefivefive = T, sep1 = "-"){
+  require(glue)
+  if(fivefivefive){
+    out <- glue("{sample(areacodes, size = 1)}{sep1}555{sep1}{paste(sample(0:9,4,replace=T), sep = \"\", collapse = \"\")}")
+  }else{
+    out <- glue("{sample(areacodes, size = 1)}{sep1}{paste(sample(1:9,1,replace=T), sep = \"\", collapse = \"\")}{paste(sample(0:9,2,replace=T), sep = \"\", collapse = \"\")}{sep1}{paste(sample(0:9,4,replace=T), sep = \"\", collapse = \"\")}")
+  }
+  return(out)
+  }
+
+set.seed(1)
+gen_pn() # [1] 646-555-0161
+
 format_pn <- function(txt){
   # basic find-replace for non-word characters (i.e. '\\W') OR non-numeral characters ('\\D')
   temp <- trimws(gsub("\\W|\\D", "", unlist(strsplit(x = txt, split = " ")))) %>%
