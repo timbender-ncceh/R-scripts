@@ -25,9 +25,9 @@ format_pn <- function(txt){
 
 # Examples:
 format_pn("555-1234") # [1] NA
-format_pn("303-555-1234") # [1] "555-555-1234
-format_pn("1+555-555-1234")# [1] "555-555-1234
-format_pn("555-555-1234 (step sons cell phone)")# [1] "555-555-1234
+format_pn("303-555-1234") # [1] "3035551234"
+format_pn("1+303-555-1234")# [1] NA
+format_pn("303-555-1234 (step sons cell phone)")# [1] "3035551234
 
 # email----
 
