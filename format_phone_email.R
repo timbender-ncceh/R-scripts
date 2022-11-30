@@ -6,22 +6,20 @@ areacodes <- read_csv("https://raw.githubusercontent.com/ravisorg/Area-Code-Geol
                       col_names = F)
 areacodes <- unique(areacodes$X1)
 
-# funs----
-# a simple formula for generating fake 10-digit phone numbers for testing purposes
-gen_pn <- function(fivefivefive = T, sep1 = "-"){
-  require(glue)
-  if(fivefivefive){
-    out <- glue("{sample(areacodes, size = 1)}{sep1}555{sep1}{paste(sample(0:9,4,replace=T), sep = \"\", collapse = \"\")}")
-  }else{
-    out <- glue("{sample(areacodes, size = 1)}{sep1}{paste(sample(1:9,1,replace=T), sep = \"\", collapse = \"\")}{paste(sample(0:9,2,replace=T), sep = \"\", collapse = \"\")}{sep1}{paste(sample(0:9,4,replace=T), sep = \"\", collapse = \"\")}")
+format_pn <- function(txt, pre_process = T){
+  # preprocess logic (optional): before splitting strings at "space" character,
+  # looks for patterns of 10 number digits in a row (optionally broken by "-" or
+  # "." as you would commonly write a phone number 303-555-1234), and if there is
+  # a space anywhere in that string of 10 digits, removes that space.  in
+  # testing, caused an error 7 times in 17,146 tries on real data.)
+  
+  # skip this logic by using the argument 'pre_process = FALSE'
+  if(pre_process){
+    txt <- gsub(pattern = "(?<=\\d{3,3})\\W{0,1}\\D{0,1} {0,1}\\W{0,1}(?=\\d{3,4})",
+                replacement = "-",
+                txt,
+                perl = T) 
   }
-  return(out)
-  }
-
-set.seed(1)
-gen_pn() # [1] 646-555-0161
-
-format_pn <- function(txt){
   # basic find-replace for non-word characters (i.e. '\\W') OR non-numeral characters ('\\D')
   temp <- trimws(gsub("\\W|\\D", "", unlist(strsplit(x = txt, split = " ")))) %>%
     grep(pattern = paste("^", areacodes, sep = "", collapse = "|"), x = ., 
@@ -39,7 +37,8 @@ format_pn <- function(txt){
 
 # Examples:
 format_pn("555-1234") # [1] NA
-format_pn("303-555-1234") # [1] "3035551234"
+format_pn("303-555- 1234", pre_process = TRUE) # [1] "3035551234"
+format_pn("303-555- 1234", pre_process = FALSE) # [1] NA
 format_pn("1+303-555-1234")# [1] NA
 format_pn("303-555-1234 (step sons cell phone)")# [1] "3035551234
 
