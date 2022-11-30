@@ -1,6 +1,18 @@
 library(dplyr)
 #rm(list=ls());cat('\f')
 
+# generate random phone numbers----
+gen_pn <- function(fivefivefive = T, 
+                   sep1 = "-"){
+  require(glue)
+  if(fivefivefive){
+    out <- glue("{sample(areacodes, size = 1)}{sep1}555{sep1}{paste(sample(0:9,4,replace=T), sep = \"\", collapse = \"\")}")
+  }else{
+    out <- glue("{sample(areacodes, size = 1)}{sep1}{paste(sample(1:9,1,replace=T), sep = \"\", collapse = \"\")}{paste(sample(0:9,2,replace=T), sep = \"\", collapse = \"\")}{sep1}{paste(sample(0:9,4,replace=T), sep = \"\", collapse = \"\")}")
+  }
+  return(out)
+  }
+
 # import areacodes----
 areacodes <- read_csv("https://raw.githubusercontent.com/ravisorg/Area-Code-Geolocation-Database/master/us-area-code-cities.csv",
                       col_names = F)
